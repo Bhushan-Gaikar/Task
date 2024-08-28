@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:task/components/app_logo.dart';
+import 'package:http/http.dart' as http;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -9,27 +12,58 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final TextEditingController _societynameController = TextEditingController();
-  final TextEditingController _address1Controller = TextEditingController();
-  final TextEditingController _address2Controller = TextEditingController();
-  final TextEditingController _phone1Controller = TextEditingController();
-  final TextEditingController _person1nameController = TextEditingController();
-  final TextEditingController _person2nameController = TextEditingController();
-  final TextEditingController _phone2Controller = TextEditingController();
 
-  int _count = 0;
+  final _formKey = GlobalKey<FormState>();
 
-  void incrementCount() {
-    setState(() {
-      _count++;
-    });
+   final TextEditingController _societynameController = TextEditingController();
+   final TextEditingController _address1Controller = TextEditingController();
+   final TextEditingController _address2Controller = TextEditingController();
+   final TextEditingController _phone1Controller = TextEditingController();
+   final TextEditingController _person1nameController = TextEditingController();
+   final TextEditingController _person2nameController = TextEditingController();
+   final TextEditingController _phone2Controller = TextEditingController();
+
+  void clearFormFields() {
+    _societynameController.clear();
+    _address1Controller.clear();
+    _address2Controller.clear();
+    _phone1Controller.clear();
+    _person1nameController.clear();
+    _person2nameController.clear();
+    _phone2Controller.clear();
+  }
+
+  Future<dynamic> postData() async{
+   try{
+
+     final url = Uri.parse('https://societypro.in/socapp/Admin/add_society_data');
+     final response = await http.post(url,
+       body: {
+         'society_name': _societynameController.text,
+         'address1': _address1Controller.text,
+         'address2': _address2Controller.text,
+         'contact_person_name_1': _person1nameController.text,
+         'contact_person_1_phone': _phone1Controller.text,
+         'contact_person_name_2': _person2nameController.text,
+         'contact_person_2_phone': _phone2Controller.text,
+       },
+     );
+     if(response.statusCode == 200){
+       print(response.body);
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Submitted Successfully')));
+     }else{
+       print('Failed to load data');
+     }
+   }catch(e){
+     print(e.toString());
+   }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.green,
-      appBar: AppBar(
+      appBar: AppBar( 
         title: const AppLogo(),
         centerTitle: true,
         actions: [
@@ -47,199 +81,233 @@ class _HomeScreenState extends State<HomeScreen> {
               minHeight: 800,
               maxHeight: double.infinity,
               maxWidth: double.infinity,
-              minWidth: 0.0),
+              minWidth: 0.0
+          ),
           color: Colors.white,
           padding: const EdgeInsets.all(10),
           margin: const EdgeInsets.all(10),
           child: SingleChildScrollView(
-            child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Welcome to our app',
-                    style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: const [
-                      Text(
-                        'Society Name',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const Divider(
-                    height: 10,
-                    color: Colors.black,
-                  ),
-                  Row(children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _societynameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Society Name',
-                          hintText: 'Enter your society name',
-                          border: OutlineInputBorder(),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Welcome to our app',
+                      style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: const [
+                        Text(
+                          'Society Name',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const Divider(
+                      height: 10,
+                      color: Colors.black,
+                    ),
+                    Row(children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _societynameController,
+                          keyboardType: TextInputType.name,
+                          decoration: const InputDecoration(
+                            labelText: 'Society Name',
+                            hintText: 'Enter your society name',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value){
+                            if(value!.isEmpty){
+                              return 'Please enter your society name';
+                            }
+                            return null;
+                          },
+                          onSaved: (value){
+                            _societynameController.text = value!;
+                          },
                         ),
                       ),
+                      const SizedBox(
+                        width: 10,
+                      ),
+                    ]),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: const [
+                        Text(
+                          'Society Information',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        )
+                      ],
+                    ),
+                    const Divider(
+                      height: 10,
+                      color: Colors.black,
+                    ),
+                    TextFormField(
+                      controller: _address1Controller,
+                      keyboardType: TextInputType.streetAddress,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        labelText: 'Address 1',
+                        hintText: 'Enter your address',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value){
+                        if(value!.isEmpty){
+                          return 'Please enter address 1';
+                        }
+                        return null;
+                      },
+                      onSaved: (value){
+                        _address1Controller.text = value!;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _address2Controller,
+                      keyboardType: TextInputType.streetAddress,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        labelText: 'Address 2',
+                        hintText: 'Enter your address',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value){
+                        if(value!.isEmpty){
+                          return 'Please enter address 2';
+                        }
+                        return null;
+                      },
+                      onSaved: (value){
+                        _address2Controller.text = value!;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    Row(children: const [
+                      Text(
+                        'Person 1 Contact Information',
+                        style:
+                            TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      )
+                    ]),
+                    const Divider(
+                      height: 10,
+                      color: Colors.black,
+                    ),
+                    TextFormField(
+                      controller: _person1nameController,
+                      keyboardType: TextInputType.name,
+                      decoration: const InputDecoration(
+                        labelText: 'Name',
+                        hintText: 'Enter your name',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value){
+                        if(value!.isEmpty){
+                          return 'Please enter person 1 name';
+                        }
+                        return null;
+                      },
+                      onSaved: (value){
+                        _person1nameController.text = value!;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _phone1Controller,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Phone',
+                        hintText: 'Enter your phone number',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value){
+                        if(value!.isEmpty){
+                          return 'Please enter phone number';
+                        }
+                        return null;
+                      },
+                      onSaved: (value){
+                        _phone1Controller.text = value!;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: const [
+                        Text(
+                          'Person 2 Contact Information',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 10, color: Colors.black),
+                    TextFormField(
+                      controller: _person2nameController,
+                      keyboardType: TextInputType.name,
+                      decoration: const InputDecoration(
+                        labelText: 'Name',
+                        hintText: 'Enter your name',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value){
+                        if(value!.isEmpty){
+                          return 'Please enter your name';
+                        }
+                        return null;
+                      },
+                      onSaved: (value){
+                        _person2nameController.text = value!;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _phone2Controller,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Phone',
+                        hintText: 'Enter your phone number',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value){
+                        if(value!.isEmpty){
+                          return 'Please enter your phone number';
+                        }
+                        return null;
+                      },
+                      onSaved: (value){
+                        _phone2Controller.text = value!;
+                      },
                     ),
                     const SizedBox(
-                      width: 10,
+                      height: 10,
                     ),
+                    ElevatedButton(
+                        onPressed: () {
+                          if(_formKey.currentState!.validate()){
+                            _formKey.currentState!.save();
+                           postData().then((_) => {
+                             clearFormFields(),
+                           });
+                          }
+                        },
+                        child: const Text(
+                          'Submit',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        )),
                   ]),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: const [
-                      Text(
-                        'Society Information',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
-                      )
-                    ],
-                  ),
-                  const Divider(
-                    height: 10,
-                    color: Colors.black,
-                  ),
-                  TextField(
-                    controller: _address1Controller,
-                    keyboardType: TextInputType.streetAddress,
-                    maxLines: 4,
-                    decoration: const InputDecoration(
-                      labelText: 'Address 1',
-                      hintText: 'Enter your address',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _address2Controller,
-                    keyboardType: TextInputType.streetAddress,
-                    maxLines: 4,
-                    decoration: const InputDecoration(
-                      labelText: 'Address 2',
-                      hintText: 'Enter your address',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(children: const [
-                    Text(
-                      'Person 1 Contact Information',
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    )
-                  ]),
-                  const Divider(
-                    height: 10,
-                    color: Colors.black,
-                  ),
-                  TextField(
-                    controller: _person1nameController,
-                    keyboardType: TextInputType.name,
-                    decoration: const InputDecoration(
-                      labelText: 'Name',
-                      hintText: 'Enter your name',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _phone1Controller,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone',
-                      hintText: 'Enter your phone',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: const [
-                      Text(
-                        'Person 2 Contact Information',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 10, color: Colors.black),
-                  TextField(
-                    controller: _person2nameController,
-                    keyboardType: TextInputType.name,
-                    decoration: const InputDecoration(
-                      labelText: 'Name',
-                      hintText: 'Enter your name',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _phone2Controller,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone',
-                      hintText: 'Enter your phone number',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  ElevatedButton(
-                      onPressed: () {
-                        if (_societynameController.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content:
-                                      Text('Please enter your first name')));
-                        } else if (_address1Controller.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content:
-                                      Text('Please enter your address 1')));
-                        } else if (_address2Controller.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content:
-                                      Text('Please enter your address 2')));
-                        } else if (_phone1Controller.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content:
-                                      Text('Please enter person 1 phone')));
-                        } else if (_phone2Controller.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content:
-                                      Text('Please enter person 2 phone')));
-                        } else if (_person1nameController.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Please enter person 1 name')));
-                        } else if (_person2nameController.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Please enter person 2 name')));
-                        } else {
-                          incrementCount();
-                        }
-                      },
-                      child: const Text(
-                        'Submit',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
-                      )),
-                  Text(
-                    'Already Fill Form Count: $_count',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ]),
+            ),
           ),
         ),
       ),

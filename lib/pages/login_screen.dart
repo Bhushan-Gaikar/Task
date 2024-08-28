@@ -1,10 +1,44 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
-class LoginScreen extends StatelessWidget {
-  LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
-  final TextEditingController _emailController = TextEditingController();
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _phoneController = TextEditingController();
+
   final TextEditingController _passwordController = TextEditingController();
+
+  bool obscure = true;
+
+  Future login(String phone,String password)async {
+    try{
+      final userData = {
+          "phone_no" : phone,
+          "password" : password,
+      };
+      final Uri url = Uri.parse('https://societypro.in/socapp/Admin/login_api');
+      final response = await http.post(url,
+          body: userData,
+      );
+      if(response.statusCode == 200){
+        print(response.body);
+        Navigator.pushReplacementNamed(context, '/home');
+      }else{
+        print('Unable to login');
+      }
+    }catch(e){
+      print(e.toString());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,73 +47,96 @@ class LoginScreen extends StatelessWidget {
         title: const Text('Login'),
         centerTitle: true,
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const Image(
-            image: AssetImage('assets/images/undraw_Mobile_login_re_9ntv.png'),
-            height: 250,
-          ),
-          const SizedBox(
-            height: 10,
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Text(
-                'Welcome',
-                style: TextStyle(
-                    fontSize: 28,
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold),
+              const Image(
+                image: AssetImage('assets/images/undraw_Mobile_login_re_9ntv.png'),
+                height: 250,
               ),
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'Enter Your Email',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
+              const SizedBox(
+                height: 10,
               ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _passwordController,
-                keyboardType: TextInputType.emailAddress,
-                obscureText: true,
-                obscuringCharacter: '*',
-                decoration: const InputDecoration(
-                    labelText: 'Password',
-                    hintText: 'Enter Your Password',
-                    prefixIcon: Icon(Icons.password),
-                    suffixIcon: Icon(Icons.visibility_off)),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Welcome',
+                    style: TextStyle(
+                        fontSize: 28,
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: const InputDecoration(
+                      labelText: 'Phone Number',
+                      hintText: 'Enter Your phone number',
+                      prefixIcon: Icon(Icons.phone),
+                    ),
+                    validator: (value){
+                      if(value!.isEmpty){
+                        return 'Phone number is required';
+                      }
+                      return null;
+                    },
+                    onSaved: (value){
+                      _phoneController.text = value!;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: obscure,
+                    obscuringCharacter: '*',
+                    decoration: InputDecoration(
+                        labelText: 'Password',
+                        hintText: 'Enter Your Password',
+                        prefixIcon: const Icon(Icons.lock),
+                        suffixIcon: InkWell(
+                          onTap: (){
+                            setState(() {
+                              obscure = !obscure;
+                            });
+                          },
+                            child: Icon( obscure ? Icons.visibility_off : Icons.visibility))),
+                   
+                    onSaved: (value){
+                      _passwordController.text = value!;
+                    },
+                  ),
+                  const SizedBox(height: 50),
+                  SizedBox(
+                    height: 50,
+                    width: 200,
+                    child: ElevatedButton(
+                        onPressed: () {
+                            if(_formKey.currentState!.validate()){
+                              login(_phoneController.text.toString(),_passwordController.text.toString());
+                            }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          shape: const StadiumBorder(),
+                          side: const BorderSide(
+                            style: BorderStyle.solid,
+                          ),
+                        ),
+                        child: const Text(
+                          'Login',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        )),
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                  onPressed: () {
-                    if (_emailController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Email is required')));
-                    } else if (_passwordController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('Password is required')));
-                    } else if (_passwordController.text.length < 6) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content:
-                              Text('Password must be at least 6 characters')));
-                    } else {
-                      Navigator.pushReplacementNamed(context, '/home');
-                    }
-                  },
-                  child: const Text(
-                    'Login',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  )),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
+
 }
