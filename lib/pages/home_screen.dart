@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:task/components/app_logo.dart';
 import 'package:http/http.dart' as http;
@@ -49,7 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
        },
      );
      if(response.statusCode == 200){
-       print(response.body);
        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Submitted Successfully')));
      }else{
        print('Failed to load data');

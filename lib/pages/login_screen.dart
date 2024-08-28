@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -30,7 +28,6 @@ class _LoginScreenState extends State<LoginScreen> {
           body: userData,
       );
       if(response.statusCode == 200){
-        print(response.body);
         Navigator.pushReplacementNamed(context, '/home');
       }else{
         print('Unable to login');
@@ -104,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             });
                           },
                             child: Icon( obscure ? Icons.visibility_off : Icons.visibility))),
-                   
+
                     onSaved: (value){
                       _passwordController.text = value!;
                     },
