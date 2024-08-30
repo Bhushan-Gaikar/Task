@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -28,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
           body: userData,
       );
       if(response.statusCode == 200){
-        Navigator.pushReplacementNamed(context, '/home');
+       navigateToHome();
       }else{
         print('Unable to login');
       }
@@ -37,8 +39,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Login'),
@@ -134,6 +138,13 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  void navigateToHome() {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Login Successfully')));
+    Timer.periodic(Duration(seconds: 3), (timer) {
+      Navigator.pushReplacementNamed(context, '/home');
+    });
   }
 
 }

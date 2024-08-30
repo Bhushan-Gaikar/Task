@@ -1,6 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:task/components/app_logo.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+
+import '../components/gps.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,36 +25,70 @@ class _HomeScreenState extends State<HomeScreen> {
    final TextEditingController _person1nameController = TextEditingController();
    final TextEditingController _person2nameController = TextEditingController();
    final TextEditingController _phone2Controller = TextEditingController();
+   final TextEditingController _workdetailsCotroller = TextEditingController();
+   final TextEditingController _userPositionController = TextEditingController();
 
-  void clearFormFields() {
-    _societynameController.clear();
-    _address1Controller.clear();
-    _address2Controller.clear();
-    _phone1Controller.clear();
-    _person1nameController.clear();
-    _person2nameController.clear();
-    _phone2Controller.clear();
+   final GPS _gps = GPS();
+   Position? userPosition;
+   Exception? exception;
+
+   void _handlePosition(Position position){
+     setState(() {
+       userPosition = position;
+     });
+
+   }
+   @override
+  void initState() {
+    _gps.startPositionStream(_handlePosition);
+    super.initState();
   }
 
+ @override
+  void dispose(){
+     _formKey.currentState!.dispose();
+     _gps.stopPositionStream();
+     _userPositionController.dispose();
+     super.dispose();
+  }
+
+  // File ? _image;
+
+  /* Future<void> _selectImage() async{
+     final picker = ImagePicker();
+
+     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+     setState(() {
+       if(pickedFile!=null){
+         _image = File(pickedFile.path);
+         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image Selected Successfully')));
+       }else{
+         _image = null;
+       }
+     });
+   }
+*/
   Future<dynamic> postData() async{
    try{
-
      final url = Uri.parse('https://societypro.in/socapp/Admin/add_society_data');
-     final response = await http.post(url,
-       body: {
-         'society_name': _societynameController.text,
-         'address1': _address1Controller.text,
-         'address2': _address2Controller.text,
-         'contact_person_name_1': _person1nameController.text,
-         'contact_person_1_phone': _phone1Controller.text,
-         'contact_person_name_2': _person2nameController.text,
-         'contact_person_2_phone': _phone2Controller.text,
-       },
-     );
+     var request = http.MultipartRequest('POST', url);
+     request.fields['society_name'] = _societynameController.text;
+     request.fields['address1'] = _address1Controller.text;
+     request.fields['address2'] = _address2Controller.text;
+     request.fields['contact_person_name_1'] = _person1nameController.text;
+     request.fields['contact_person_1_phone'] = _phone1Controller.text;
+     request.fields['contact_person_name_2'] = _person2nameController.text;
+     request.fields['contact_person_2_phone'] = _phone2Controller.text;
+     request.fields['work_details'] = _workdetailsCotroller.text;
+     request.fields['geo_location'] = userPosition.toString();
+
+     var response = await request.send();
+
      if(response.statusCode == 200){
        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Submitted Successfully')));
      }else{
-       print('Failed to load data');
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load data')));
      }
    }catch(e){
      print(e.toString());
@@ -75,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Center(
         child: Container(
           constraints: const BoxConstraints(
-              minHeight: 800,
+              minHeight: 1000,
               maxHeight: double.infinity,
               maxWidth: double.infinity,
               minWidth: 0.0
@@ -136,6 +175,35 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 10,
                       ),
                     ]),
+                    Row(
+                      children: [
+                        Text('Work Details',style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),),
+                      ],
+                    ),
+                    const Divider(
+                      height: 10,
+                      color: Colors.black,
+                    ),
+                    TextFormField(
+                      controller: _workdetailsCotroller,
+                      keyboardType: TextInputType.streetAddress,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        labelText: 'Work Details',
+                        hintText: 'Enter your work details',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value){
+                        if(value!.isEmpty){
+                          return 'Please enter your work details';
+                        }
+                        return null;
+                      },
+                      onSaved: (value){
+                        _workdetailsCotroller.text = value!;
+                      },
+                    ),
                     const SizedBox(height: 10),
                     Row(
                       children: const [
@@ -188,6 +256,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       onSaved: (value){
                         _address2Controller.text = value!;
                       },
+                    ),
+                    SizedBox(height: 5,),
+                    Row(
+                      children: [
+                        Text('Location' ,style:TextStyle(fontSize:20,fontWeight:FontWeight.bold)),
+                      ],
+                    ),
+                    const Divider(
+                      height: 10,
+                      color: Colors.black,
+                    ),
+
+                    TextFormField(
+                      controller: _userPositionController,
+                      enabled: false,
+                      decoration: InputDecoration(
+                        labelText: userPosition != null ? userPosition.toString() : 'Unknown',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Row(children: const [
@@ -286,16 +373,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         _phone2Controller.text = value!;
                       },
                     ),
-                    const SizedBox(
-                      height: 10,
-                    ),
+                   /* SizedBox(height: 10,),
+                    _image != null ? Container(
+                      height: 100,
+                        width: 100,
+                        child: Image.file(_image!)) : Container(child: Center(child: Text('No Image Selected'))),
+                    SizedBox(height: 10,),
+                    ElevatedButton(onPressed: _selectImage, child: Text('Select Image')),*/
+                    SizedBox(height: 10,),
                     ElevatedButton(
                         onPressed: () {
                           if(_formKey.currentState!.validate()){
                             _formKey.currentState!.save();
-                           postData().then((_) => {
-                             clearFormFields(),
-                           });
+                           postData();
+                           _formKey.currentState!.reset();
                           }
                         },
                         child: const Text(
@@ -310,4 +401,5 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
 }

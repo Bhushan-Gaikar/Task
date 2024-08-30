@@ -15,7 +15,12 @@ class MyApp extends StatelessWidget {
       title: 'Task',
       theme: ThemeData(
         primarySwatch: Colors.green,
+        snackBarTheme: SnackBarThemeData(
+          backgroundColor: Colors.green,
+          actionTextColor: Colors.white,
+        )
       ),
+
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginScreen(),
