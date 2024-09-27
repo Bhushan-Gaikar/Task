@@ -25,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
    final TextEditingController _person1nameController = TextEditingController();
    final TextEditingController _person2nameController = TextEditingController();
    final TextEditingController _phone2Controller = TextEditingController();
-   final TextEditingController _workdetailsCotroller = TextEditingController();
+   final TextEditingController _workdetailsController = TextEditingController();
    final TextEditingController _userPositionController = TextEditingController();
 
    final GPS _gps = GPS();
@@ -52,23 +52,24 @@ class _HomeScreenState extends State<HomeScreen> {
      super.dispose();
   }
 
-  // File ? _image;
+  List<XFile> _images = [];
 
-  /* Future<void> _selectImage() async{
-     final picker = ImagePicker();
+  Future<void> _selectImages() async {
+    final picker = ImagePicker();
+    final List<XFile> pickedFiles = await picker.pickMultiImage();
 
-     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    setState(() {
+      if (pickedFiles.isNotEmpty) {
+        _images.addAll(pickedFiles);
+      } else {
+        _images = [];
+      }
+      setState(() {
 
-     setState(() {
-       if(pickedFile!=null){
-         _image = File(pickedFile.path);
-         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image Selected Successfully')));
-       }else{
-         _image = null;
-       }
-     });
-   }
-*/
+      });
+    });
+  }
+
   Future<dynamic> postData() async{
    try{
      final url = Uri.parse('https://societypro.in/socapp/Admin/add_society_data');
@@ -80,8 +81,14 @@ class _HomeScreenState extends State<HomeScreen> {
      request.fields['contact_person_1_phone'] = _phone1Controller.text;
      request.fields['contact_person_name_2'] = _person2nameController.text;
      request.fields['contact_person_2_phone'] = _phone2Controller.text;
-     request.fields['work_details'] = _workdetailsCotroller.text;
+     request.fields['work_details'] = _workdetailsController.text;
      request.fields['geo_location'] = userPosition.toString();
+
+     for (int i = 0; i < _images.length; i++) {
+         final file = await http.MultipartFile.fromPath(
+             'upload_imgs[]', _images[i].path);
+         request.files.add(file);
+       }
 
      var response = await request.send();
 
@@ -176,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ]),
                     Row(
-                      children: [
+                      children:  const [
                         Text('Work Details',style: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.bold),),
                       ],
@@ -186,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.black,
                     ),
                     TextFormField(
-                      controller: _workdetailsCotroller,
+                      controller: _workdetailsController,
                       keyboardType: TextInputType.streetAddress,
                       maxLines: 4,
                       decoration: const InputDecoration(
@@ -201,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         return null;
                       },
                       onSaved: (value){
-                        _workdetailsCotroller.text = value!;
+                        _workdetailsController.text = value!;
                       },
                     ),
                     const SizedBox(height: 10),
@@ -257,9 +264,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         _address2Controller.text = value!;
                       },
                     ),
-                    SizedBox(height: 5,),
+                    const SizedBox(height: 5,),
                     Row(
-                      children: [
+                      children: const [
                         Text('Location' ,style:TextStyle(fontSize:20,fontWeight:FontWeight.bold)),
                       ],
                     ),
@@ -273,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       enabled: false,
                       decoration: InputDecoration(
                         labelText: userPosition != null ? userPosition.toString() : 'Unknown',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -373,14 +380,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         _phone2Controller.text = value!;
                       },
                     ),
-                   /* SizedBox(height: 10,),
-                    _image != null ? Container(
-                      height: 100,
-                        width: 100,
-                        child: Image.file(_image!)) : Container(child: Center(child: Text('No Image Selected'))),
-                    SizedBox(height: 10,),
-                    ElevatedButton(onPressed: _selectImage, child: Text('Select Image')),*/
-                    SizedBox(height: 10,),
+                    SizedBox(height: 5,),
+                    Container(
+                      height: 200,
+                      child: _images.isEmpty
+                          ? Center(child: Text('No Images Selected'))
+                          : ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _images.length,
+                        itemBuilder: (context, index) {
+                          return Container(
+                            width: 200,
+                            height: 100,
+                            margin: EdgeInsets.all(10),
+                            child: Image.file(File(_images[index].path)),
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 5,),
+                    ElevatedButton(onPressed: _selectImages, child: Text('Select Image')),
+                    const SizedBox(height: 10,),
                     ElevatedButton(
                         onPressed: () {
                           if(_formKey.currentState!.validate()){
